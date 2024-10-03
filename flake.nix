@@ -1,9 +1,7 @@
 {
   description = "A very basic flake";
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-  };
+  inputs = { nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable"; };
 
   outputs = { self, nixpkgs }:
     let
@@ -14,27 +12,27 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
-    in
-    {
+    in {
       packages = forAllSystems (system:
-        let
-          pkgs = nixpkgsFor.${system};
-        in
-        {
+        let pkgs = nixpkgsFor.${system};
+        in {
           default = pkgs.stdenv.mkDerivation {
             pname = "ibus-bamboo";
             inherit version;
 
             src = ./.;
 
-            nativeBuildInputs = [
-              pkgs.pkg-config
-              pkgs.wrapGAppsHook3
-              pkgs.go
-            ];
+            nativeBuildInputs = [ pkgs.pkg-config pkgs.wrapGAppsHook3 pkgs.go ];
 
             buildInputs = [
-              pkgs.xorg.libXtst
+              pkgs.pkgconf
+              pkgs.xorg.libX11
+              pkgs.xorg.libXcursor
+              pkgs.xorg.libXrandr
+              pkgs.xorg.libXinerama
+              pkgs.xorg.libXi
+              pkgs.xorg.libXxf86vm
+              pkgs.libGL
             ];
 
             preConfigure = ''
@@ -42,30 +40,28 @@
               sed -i "s,/usr,$out," data/bamboo.xml
             '';
 
-            makeFlags = [
-              "PREFIX=${placeholder "out"}"
-            ];
+            makeFlags = [ "PREFIX=${placeholder "out"}" ];
           };
-        }
-      );
+        });
 
       devShells = forAllSystems (system:
-        let
-            pkgs = nixpkgsFor.${system};
-        in
-        {
+        let pkgs = nixpkgsFor.${system};
+        in {
           default = pkgs.mkShell {
-            nativeBuildInputs = [
-              pkgs.pkg-config
-              pkgs.wrapGAppsHook3
-              pkgs.go
-            ];
+            nativeBuildInputs = [ pkgs.pkg-config pkgs.wrapGAppsHook3 pkgs.go ];
 
             buildInputs = [
+              pkgs.pkgconf
+              pkgs.libGL
+              pkgs.xorg.libX11
+              pkgs.xorg.libXcursor
+              pkgs.xorg.libXrandr
+              pkgs.xorg.libXinerama
+              pkgs.xorg.libXi
+              pkgs.xorg.libXxf86vm
               pkgs.xorg.libXtst
             ];
           };
-        }
-      );
+        });
     };
 }
